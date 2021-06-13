@@ -34,10 +34,10 @@ def split_4d(input_folder, num_processes=default_num_threads, overwrite_task_out
         "The input folder must be a valid Task folder from the Medical Segmentation Decathlon with at least the " \
         "imagesTr and labelsTr subfolders and the dataset.json file"
 
-    while input_folder.endswith("/"):
+    while input_folder.endswith("\\"):
         input_folder = input_folder[:-1]
 
-    full_task_name = input_folder.split("/")[-1]
+    full_task_name = input_folder.split("\\")[-1]
 
     assert full_task_name.startswith("Task"), "The input folder must point to a folder that starts with TaskXX_"
 
@@ -50,19 +50,19 @@ def split_4d(input_folder, num_processes=default_num_threads, overwrite_task_out
 
     task_name = full_task_name[7:]
 
-    output_folder = join(nnUNet_raw_data, "Task%03.0d_" % overwrite_task_output_id + task_name)
+    output_folder = join(nnUNet_raw_data, "Task%02.0d_" % overwrite_task_output_id + task_name)
 
-    if isdir(output_folder):
-        shutil.rmtree(output_folder)
+    # if isdir(output_folder):
+    #     shutil.rmtree(output_folder)
 
     files = []
     output_dirs = []
 
-    maybe_mkdir_p(output_folder)
+    # maybe_mkdir_p(output_folder)
     for subdir in ["imagesTr", "imagesTs"]:
         curr_out_dir = join(output_folder, subdir)
-        if not isdir(curr_out_dir):
-            os.mkdir(curr_out_dir)
+        # if not isdir(curr_out_dir):
+        #     os.mkdir(curr_out_dir)
         curr_dir = join(input_folder, subdir)
         nii_files = [join(curr_dir, i) for i in os.listdir(curr_dir) if i.endswith(".nii.gz")]
         nii_files.sort()
@@ -70,7 +70,7 @@ def split_4d(input_folder, num_processes=default_num_threads, overwrite_task_out
             files.append(n)
             output_dirs.append(curr_out_dir)
 
-    shutil.copytree(join(input_folder, "labelsTr"), join(output_folder, "labelsTr"))
+    # shutil.copytree(join(input_folder, "labelsTr"), join(output_folder, "labelsTr"))
 
     p = Pool(num_processes)
     p.starmap(split_4d_nifti, zip(files, output_dirs))
