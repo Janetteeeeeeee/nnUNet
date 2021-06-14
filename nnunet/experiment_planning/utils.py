@@ -20,13 +20,26 @@ from collections import OrderedDict
 from multiprocessing import Pool
 
 import numpy as np
-from batchgenerators.utilities.file_and_folder_operations import join, isdir, maybe_mkdir_p, subfiles, subdirs, isfile
+from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles, subdirs, isfile
 from nnunet.configuration import default_num_threads
 from nnunet.experiment_planning.DatasetAnalyzer import DatasetAnalyzer
 from nnunet.experiment_planning.common_utils import split_4d_nifti
 from nnunet.paths import nnUNet_raw_data, nnUNet_cropped_data, preprocessing_output_dir
 from nnunet.preprocessing.cropping import ImageCropper
 
+
+def maybe_mkdir_p(directory):
+    directory = os.path.abspath(directory)
+    splits = directory.split("\\")[1:]
+    base = directory.split('\\')[0]
+    for i in range(0, len(splits)):
+        if not os.path.isdir(join(base, join("\\", *splits[:i+1]))):
+            try:
+                os.mkdir(join(base, join("\\", *splits[:i+1])))
+            except FileExistsError:
+                # this can sometimes happen when two jobs try to create the same directory at the same time,
+                # especially on network drives.
+                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 def split_4d(input_folder, num_processes=default_num_threads, overwrite_task_output_id=None):
     assert isdir(join(input_folder, "imagesTr")) and isdir(join(input_folder, "labelsTr")) and \
@@ -50,19 +63,19 @@ def split_4d(input_folder, num_processes=default_num_threads, overwrite_task_out
 
     task_name = full_task_name[7:]
 
-    output_folder = join(nnUNet_raw_data, "Task%02.0d_" % overwrite_task_output_id + task_name)
+    output_folder = join(nnUNet_raw_data, "Task%03.0d_" % overwrite_task_output_id + task_name)
 
-    # if isdir(output_folder):
-    #     shutil.rmtree(output_folder)
+    if isdir(output_folder):
+        shutil.rmtree(output_folder)
 
     files = []
     output_dirs = []
 
-    # maybe_mkdir_p(output_folder)
+    maybe_mkdir_p(output_folder)
     for subdir in ["imagesTr", "imagesTs"]:
         curr_out_dir = join(output_folder, subdir)
-        # if not isdir(curr_out_dir):
-        #     os.mkdir(curr_out_dir)
+        if not isdir(curr_out_dir):
+            os.mkdir(curr_out_dir)
         curr_dir = join(input_folder, subdir)
         nii_files = [join(curr_dir, i) for i in os.listdir(curr_dir) if i.endswith(".nii.gz")]
         nii_files.sort()
@@ -70,7 +83,7 @@ def split_4d(input_folder, num_processes=default_num_threads, overwrite_task_out
             files.append(n)
             output_dirs.append(curr_out_dir)
 
-    # shutil.copytree(join(input_folder, "labelsTr"), join(output_folder, "labelsTr"))
+    shutil.copytree(join(input_folder, "labelsTr"), join(output_folder, "labelsTr"))
 
     p = Pool(num_processes)
     p.starmap(split_4d_nifti, zip(files, output_dirs))
