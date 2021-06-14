@@ -66,7 +66,7 @@ def get_case_identifier(case):
 
 
 def get_case_identifier_from_npz(case):
-    case_identifier = case.split("/")[-1][:-4]
+    case_identifier = case.split("\\")[-1][:-4]
     return case_identifier
 
 

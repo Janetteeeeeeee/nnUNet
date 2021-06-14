@@ -184,9 +184,9 @@ def plan_and_preprocess(task_string, processes_lowres=default_num_threads, proce
         # if there is more than one my_data_identifier (different brnaches) then this code will run for all of them if
         # they start with the same string. not problematic, but not pretty
         stages = [i for i in subdirs(preprocessing_output_dir_this_task_train, join=True, sort=True)
-                  if i.split("/")[-1].find("stage") != -1]
+                  if i.split("\\")[-1].find("stage") != -1]
         for s in stages:
-            print(s.split("/")[-1])
+            print(s.split("\\")[-1])
             list_of_npz_files = subfiles(s, True, None, ".npz", True)
             list_of_pkl_files = [i[:-4]+".pkl" for i in list_of_npz_files]
             all_classes = []
