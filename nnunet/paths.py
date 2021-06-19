@@ -40,10 +40,11 @@ PLEASE READ paths.md FOR INFORMATION TO HOW TO SET THIS UP
 """
 
 # base = os.environ['nnUNet_raw_data_base'] if "nnUNet_raw_data_base" in os.environ.keys() else None
-base = "D:/6th_Hosp_AutoPlanning/nnUnet/nnUNet_raw_data_base"
+nnunet_base = 'E:\\AutoSeg_Bladder\\nnUnet'
+base = join(nnunet_base, "nnUNet_raw_data_base")
 # preprocessing_output_dir = os.environ['nnUNet_preprocessed'] if "nnUNet_preprocessed" in os.environ.keys() else None
-preprocessing_output_dir = "D:/6th_Hosp_AutoPlanning/nnUnet/nnUNet_preprocessed"
-network_training_output_dir_base = "D:/6th_Hosp_AutoPlanning/nnUnet/nnUNet_trained_models"
+preprocessing_output_dir = join(nnunet_base, "nnUNet_preprocessed")
+network_training_output_dir_base = join(nnunet_base, "nnUNet_trained_models")
 # network_training_output_dir_base = os.path.join(os.environ['RESULTS_FOLDER']) if "RESULTS_FOLDER" in os.environ.keys() else None
 
 if base is not None:
