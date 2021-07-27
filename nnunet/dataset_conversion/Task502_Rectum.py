@@ -7,7 +7,7 @@ from skimage import measure
 import dicom2nifti
 import nibabel as nib
 import pydicom
-from batchgenerators.utilities.file_and_folder_operations import join, isdir
+from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles
 from nnunet.paths import nnUNet_raw_data
 from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
@@ -34,11 +34,11 @@ def read_ct_rs(ct_rs_folder):
     for i in range(ct_rs_files.__len__()):
         temp_file = ct_rs_files[i]
         ct_file_index = 0
-        if 'CT' in temp_file:
+        if temp_file.startswith('RS') or temp_file.startswith('RTSTRUCT'):
+            rs_file = os.path.join(ct_rs_folder, temp_file)
+        elif temp_file.startswith('CT') or temp_file.endswith('.dcm'):
             ct_files.append(os.path.join(ct_rs_folder, temp_file))
             ct_file_index += 1
-        elif 'RS' in temp_file:
-            rs_file = os.path.join(ct_rs_folder, temp_file)
     if rs_file == "":
         print("no rt structure file", ct_rs_folder)
     return ct_files, rs_file
@@ -71,11 +71,25 @@ def extract_contour(ct_files, rs_file):
     list.sort(slice_location)
 
     roi_list = []
+    roi_name_index_dict = {}
     for index, roi in enumerate(rs_dicom_info[0x3006, 0x0020]):
-        roi_name = roi[0x3006, 0x0026].value
-        if roi_name.lower().find('s-bladder') >= 0 or roi_name.lower().find('bladder_j') >= 0:
-            roi_list.append(index)
-            break
+        roi_name = roi[0x3006, 0x0026].value.lower()
+        if roi_name.find('rectum') >= 0:
+            roi_name_index_dict['rectum'] = index
+        # elif roi_name.find('bladder_j') >= 0:
+        #     roi_name_index_dict['bladder_j'] = index
+        # elif roi_name.find('bladder-j') >= 0:
+        #     roi_name_index_dict['bladder-j'] = index
+        # elif roi_name.find('bladder') >= 0:
+        #     roi_name_index_dict['bladder'] = index
+    if 'rectum' in roi_name_index_dict:
+        roi_list.append(roi_name_index_dict['rectum'])
+    # elif 'bladder_j' in roi_name_index_dict:
+    #     roi_list.append(roi_name_index_dict['bladder_j'])
+    # elif 'bladder-j' in roi_name_index_dict:
+    #     roi_list.append(roi_name_index_dict['bladder-j'])
+    # elif 'bladder' in roi_name_index_dict:
+    #     roi_list.append(roi_name_index_dict['bladder'])
 
     if len(roi_list) == 0:
         raise Exception
@@ -127,9 +141,7 @@ def extract_contour(ct_files, rs_file):
     return contour_filled
 
 
-def convert_file(mode, dicom_root_folder):
-    task_id = '501'
-    task_name = 'bladder'
+def convert_file(mode, dicom_root_folder, task_id, task_name):
     task_root_folder = nnUNet_raw_data + '\\Task' + task_id + '_' + task_name
     label_filename_suffix = '.nii.gz'
     maybe_mkdir_p(task_root_folder)
@@ -160,16 +172,17 @@ def convert_file(mode, dicom_root_folder):
                 image_nii_folders.append(patient_dir)
             except Exception as e:
                 print(e)
-                print('No contour s-bladder', patient_dir)
+                print('No contour rectum', patient_dir)
 
         for nii_folder in image_nii_folders:
-            nii_gz_file = join(train_image, nii_folder, '2.nii.gz')
+            niftis = subfiles(join(train_image, nii_folder), suffix=".nii.gz")
+            nii_gz_file = niftis[0]
             shutil.move(nii_gz_file, join(train_image, task_name + '_' + nii_folder + '_0000' + label_filename_suffix))
-            shutil.rmtree(join(train_image, nii_folder))
+            # shutil.rmtree(join(train_image, nii_folder))
 
         # create json
         generate_dataset_json(join(task_root_folder, 'dataset.json'), train_image, None, ('CT',),
-                              {0: 'background', 1: 'bladder'}, dataset_name=task_name)
+                              {0: 'background', 1: 'rectum'}, dataset_name=task_name)
     elif mode == 'test':
         test_image = join(task_root_folder, 'imagesTs')
         test_label = join(task_root_folder, 'labelsTs')
@@ -197,14 +210,18 @@ def convert_file(mode, dicom_root_folder):
                 image_nii_folders.append(patient_dir)
             except Exception as e:
                 print(e)
-                print('No contour s-bladder', patient_dir)
+                print('No contour rectum', patient_dir)
 
         for nii_folder in image_nii_folders:
-            nii_gz_file = join(test_image, nii_folder, '2.nii.gz')
+            niftis = subfiles(join(test_image, nii_folder), suffix=".nii.gz")
+            nii_gz_file = niftis[0]
             shutil.move(nii_gz_file, join(test_image, task_name + '_' + nii_folder + '_0000' + label_filename_suffix))
-            shutil.rmtree(join(test_image, nii_folder))
+            # shutil.rmtree(join(test_image, nii_folder))
 
 if __name__ == "__main__":
-    dicom_root_folder = r'E:\AutoSeg_Bladder\test\6th'
-    convert_file('test', dicom_root_folder)
+    mode = 'test'
+    task_id = '502'
+    task_name = 'rectum'
+    dicom_root_folder = r'E:\AutoSeg_Rectum_data\Test'
+    convert_file(mode, dicom_root_folder, task_id, task_name)
 
