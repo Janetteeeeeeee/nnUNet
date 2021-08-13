@@ -295,7 +295,11 @@ class nnUNetTrainer(NetworkTrainer):
             else:
                 g = hl.build_graph(self.network, torch.rand((1, self.num_input_channels, *self.patch_size)),
                                    transforms=None)
-            g.save(join(self.output_folder, "network_architecture.pdf"))
+            dot = g.build_dot()
+            dot.format = 'pdf'
+            dot.attr("graph", rankdir="TD")
+            file_name = "network_architecture"
+            dot.render(file_name, directory=self.output_folder, cleanup=True)
             del g
         except Exception as e:
             self.print_to_log_file("Unable to plot network architecture:")
