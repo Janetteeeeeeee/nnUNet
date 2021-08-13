@@ -51,9 +51,9 @@ class Evaluator:
     ]
 
     default_advanced_metrics = [
-        #"Hausdorff Distance",
+        "Hausdorff Distance",
         "Hausdorff Distance 95",
-        #"Avg. Surface Distance",
+        "Avg. Surface Distance",
         #"Avg. Symmetric Surface Distance"
     ]
 
@@ -149,7 +149,7 @@ class Evaluator:
         if metric not in self.metrics:
             self.metrics.append(metric)
 
-    def evaluate(self, test=None, reference=None, advanced=False, **metric_kwargs):
+    def evaluate(self, test=None, reference=None, advanced=True, **metric_kwargs):
         """Compute metrics for segmentations."""
         if test is not None:
             self.set_test(test)
@@ -481,3 +481,6 @@ def nnunet_evaluate_folder():
                                                                        "information.")
     args = parser.parse_args()
     return evaluate_folder(args.ref, args.pred, args.l)
+
+if __name__ == "__main__":
+    nnunet_evaluate_folder()
