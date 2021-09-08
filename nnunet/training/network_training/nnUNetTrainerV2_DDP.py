@@ -494,7 +494,7 @@ class nnUNetTrainerV2_DDP(nnUNetTrainerV2):
         # for evaluation (which is done by local rank 0)
         for k in my_keys:
             properties = load_pickle(self.dataset[k]['properties_file'])
-            fname = properties['list_of_data_files'][0].split("/")[-1][:-12]
+            fname = properties['list_of_data_files'][0].split("\\")[-1][:-12]
             pred_gt_tuples.append([join(output_folder, fname + ".nii.gz"),
                                    join(self.gt_niftis_folder, fname + ".nii.gz")])
             if k in my_keys:
@@ -557,7 +557,7 @@ class nnUNetTrainerV2_DDP(nnUNetTrainerV2):
                                  json_output_file=join(output_folder, "summary.json"),
                                  json_name=job_name + " val tiled %s" % (str(use_sliding_window)),
                                  json_author="Fabian",
-                                 json_task=task, num_threads=default_num_threads)
+                                 json_task=task, num_threads=2)
 
             if run_postprocessing_on_folds:
                 # in the old nnunet we would stop here. Now we add a postprocessing. This postprocessing can remove everything

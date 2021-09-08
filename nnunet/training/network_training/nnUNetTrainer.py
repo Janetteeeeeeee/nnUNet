@@ -44,18 +44,6 @@ from nnunet.utilities.tensor_utilities import sum_tensor
 
 matplotlib.use("agg")
 
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i+1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i+1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 class nnUNetTrainer(NetworkTrainer):
     def __init__(self, plans_file, fold, output_folder=None, dataset_directory=None, batch_dice=True, stage=None,
@@ -600,7 +588,7 @@ class nnUNetTrainer(NetworkTrainer):
 
         for k in self.dataset_val.keys():
             properties = load_pickle(self.dataset[k]['properties_file'])
-            fname = properties['list_of_data_files'][0].split("/")[-1][:-12]
+            fname = properties['list_of_data_files'][0].split("\\")[-1][:-12]
             if overwrite or (not isfile(join(output_folder, fname + ".nii.gz"))) or \
                     (save_softmax and not isfile(join(output_folder, fname + ".npz"))):
                 data = np.load(self.dataset[k]['data_file'])['data']
@@ -653,13 +641,13 @@ class nnUNetTrainer(NetworkTrainer):
 
         # evaluate raw predictions
         self.print_to_log_file("evaluation of raw predictions")
-        task = self.dataset_directory.split("\\")[-1]
+        task = self.dataset_directory.split("/")[-1]
         job_name = self.experiment_name
         _ = aggregate_scores(pred_gt_tuples, labels=list(range(self.num_classes)),
                              json_output_file=join(output_folder, "summary.json"),
                              json_name=job_name + " val tiled %s" % (str(use_sliding_window)),
                              json_author="Fabian",
-                             json_task=task, num_threads=default_num_threads)
+                             json_task=task, num_threads=2)
 
         if run_postprocessing_on_folds:
             # in the old nnunet we would stop here. Now we add a postprocessing. This postprocessing can remove everything

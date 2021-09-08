@@ -248,7 +248,7 @@ class nnUNetTrainerV2CascadeFullRes(nnUNetTrainerV2):
 
         for k in self.dataset_val.keys():
             properties = load_pickle(self.dataset[k]['properties_file'])
-            fname = properties['list_of_data_files'][0].split("/")[-1][:-12]
+            fname = properties['list_of_data_files'][0].split("\\")[-1][:-12]
 
             if overwrite or (not isfile(join(output_folder, fname + ".nii.gz"))) or \
                     (save_softmax and not isfile(join(output_folder, fname + ".npz"))):
@@ -313,7 +313,7 @@ class nnUNetTrainerV2CascadeFullRes(nnUNetTrainerV2):
                              json_output_file=join(output_folder, "summary.json"),
                              json_name=job_name + " val tiled %s" % (str(use_sliding_window)),
                              json_author="Fabian",
-                             json_task=task, num_threads=default_num_threads)
+                             json_task=task, num_threads=2)
 
         if run_postprocessing_on_folds:
             # in the old nnunet we would stop here. Now we add a postprocessing. This postprocessing can remove everything

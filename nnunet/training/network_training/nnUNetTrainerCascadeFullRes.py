@@ -217,7 +217,7 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
                 transpose_backward = self.plans.get('transpose_backward')
                 softmax_pred = softmax_pred.transpose([0] + [i + 1 for i in transpose_backward])
 
-            fname = properties['list_of_data_files'][0].split("/")[-1][:-12]
+            fname = properties['list_of_data_files'][0].split("\\")[-1][:-12]
 
             if save_softmax:
                 softmax_fname = join(output_folder, fname + ".npz")

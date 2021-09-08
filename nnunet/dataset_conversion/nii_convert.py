@@ -12,19 +12,6 @@ from nnunet.paths import nnUNet_raw_data
 from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
 
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i+1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i+1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
-
 def read_ct_rs(ct_rs_folder):
     ct_rs_files = os.listdir(ct_rs_folder)
     ct_files = []
@@ -123,7 +110,7 @@ if __name__ == "__main__":
     task_id = '501'
     task_name = 'bladder'
     dicom_root_folder = r'E:\AutoSeg_Bladder\6th'
-    task_root_folder = nnUNet_raw_data + '\\Task' + task_id + '_' + task_name
+    task_root_folder = nnUNet_raw_data + '/Task' + task_id + '_' + task_name
     if isdir(task_root_folder):
         shutil.rmtree(task_root_folder)
     train_image = join(task_root_folder, 'imagesTr')

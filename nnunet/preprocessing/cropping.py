@@ -19,18 +19,6 @@ from batchgenerators.utilities.file_and_folder_operations import *
 from multiprocessing import Pool
 from collections import OrderedDict
 
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i+1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i+1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 def create_nonzero_mask(data):
     from scipy.ndimage import binary_fill_holes
@@ -61,12 +49,12 @@ def crop_to_bbox(image, bbox):
 
 
 def get_case_identifier(case):
-    case_identifier = case[0].split("\\")[-1].split(".nii.gz")[0][:-5]
+    case_identifier = case[0].split("/")[-1].split(".nii.gz")[0][:-5]
     return case_identifier
 
 
 def get_case_identifier_from_npz(case):
-    case_identifier = case.split("\\")[-1][:-4]
+    case_identifier = case.split("/")[-1][:-4]
     return case_identifier
 
 
@@ -129,7 +117,7 @@ def crop_to_nonzero(data, seg=None, nonzero_label=-1):
 
 
 def get_patient_identifiers_from_cropped_files(folder):
-    return [i.split("\\")[-1][:-4] for i in subfiles(folder, join=True, suffix=".npz")]
+    return [i.split("/")[-1][:-4] for i in subfiles(folder, join=True, suffix=".npz")]
 
 
 class ImageCropper(object):

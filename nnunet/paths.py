@@ -15,18 +15,6 @@
 import os
 from batchgenerators.utilities.file_and_folder_operations import maybe_mkdir_p, join
 
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i+1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i+1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 # do not modify these unless you know what you are doing
 my_output_identifier = "nnUNet"
