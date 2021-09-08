@@ -45,8 +45,8 @@ class nnUNetTrainerV2CascadeFullRes(nnUNetTrainerV2):
                           deterministic, previous_trainer, fp16)
 
         if self.output_folder is not None:
-            task = self.output_folder.split("/")[-3]
-            plans_identifier = self.output_folder.split("/")[-2].split("__")[-1]
+            task = self.output_folder.split("\\")[-3]
+            plans_identifier = self.output_folder.split("\\")[-2].split("__")[-1]
 
             folder_with_segs_prev_stage = join(network_training_output_dir, "3d_lowres",
                                                task, previous_trainer + "__" + plans_identifier, "pred_next_stage")
