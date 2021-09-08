@@ -107,8 +107,8 @@ if __name__ == "__main__":
     task = args.task
     fold = args.fold
 
-    plans_file, folder_with_preprocessed_data, output_folder_name, dataset_directory, batch_dice, stage = \
-        get_default_configuration("3d_lowres", task)
+    plans_file, output_folder_name, dataset_directory, batch_dice, stage, _ = \
+        get_default_configuration("3d_lowres", task, trainerclass)
 
     trainer_class = recursive_find_python_class([join(nnunet.__path__[0], "training", "network_training")],
                                                 trainerclass,
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         assert issubclass(trainer_class,
                           nnUNetTrainer), "network_trainer was found but is not derived from nnUNetTrainer"
 
-    trainer = trainer_class(plans_file, fold, folder_with_preprocessed_data, output_folder=output_folder_name,
+    trainer = trainer_class(plans_file, fold, output_folder=output_folder_name,
                             dataset_directory=dataset_directory, batch_dice=batch_dice, stage=stage)
 
     trainer.initialize(False)
