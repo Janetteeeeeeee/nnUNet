@@ -1,37 +1,44 @@
 from rt_utils import RTStructBuilder
 from SimpleITK import GetArrayFromImage, ReadImage
-import matplotlib.pyplot as plt
 import numpy as np
+from batchgenerators.utilities.file_and_folder_operations import subfiles, join
 
-segmentation_file = r"I:\Data\convert-test\bladder_001.nii.gz"
+ensemble_prediction_dir = r"/media/lu/Data/Data/nnUnet/predict/bladder/190/ensemble"
+test_dicom_dir = r"/media/lu/Data/Data/Dicom/test/final_data"
+dicom_output_dir = r"/media/lu/Data/Data/Dicom/test/predict/final_data"
 
-# Create new RT Struct. Requires the DICOM series path for the RT Struct.
-# rtstruct = RTStructBuilder.create_new(dicom_series_path="./testlocation")
+pred_nii = subfiles(ensemble_prediction_dir, join=False, suffix="nii.gz")
 
-# Load existing RT Struct. Requires the series path and existing RT Struct path
-rtstruct = RTStructBuilder.create_from(
-  dicom_series_path=r"I:\Data\convert-test\001",
-  rt_struct_path=r"I:\Data\convert-test\001\RS1.3.6.1.4.1.2452.6.3152533160.1205408082.1646658237.2945066707.dcm"
-)
+for pred in pred_nii:
+    print(pred)
+    nii_file = join(ensemble_prediction_dir, pred)
+    patient_id = pred.split(".")[0].split("_")[1]
+    dicom_series = join(test_dicom_dir, patient_id)
+    rt_struct_path = subfiles(dicom_series, join=False, prefix="RS")[0]
+    # Create new RT Struct. Requires the DICOM series path for the RT Struct.
+    # rt_struct = RTStructBuilder.create_new(dicom_series_path=dicom_series)
 
-MASK_FROM_ML_MODEL = GetArrayFromImage(ReadImage(segmentation_file))
-mask_boolean = MASK_FROM_ML_MODEL > 0
-mask_boolean = mask_boolean.swapaxes(0, 2)
-mask_boolean = mask_boolean.swapaxes(0, 1)
-mask_boolean = np.flip(mask_boolean, 0)
-plt.imshow(mask_boolean[:, :, 35])
-plt.show()
-# ...
-# Create mask through means such as ML
-# ...
+    # Load existing RT Struct. Requires the series path and existing RT Struct path
+    rt_struct = RTStructBuilder.create_from(dicom_series_path=dicom_series, rt_struct_path=join(dicom_series,
+                                                                                                rt_struct_path))
 
-# Add another ROI, this time setting the color, description, and name
-rtstruct.add_roi(
-  mask=mask_boolean,
-  color=[255, 0, 255],
-  name="Bladder_predict"
-)
+    MASK_FROM_ML_MODEL = GetArrayFromImage(ReadImage(nii_file))
+    mask_boolean = MASK_FROM_ML_MODEL > 0
+    mask_boolean = mask_boolean.swapaxes(0, 2)
+    mask_boolean = mask_boolean.swapaxes(0, 1)
+    mask_boolean = np.flip(mask_boolean, 0)
+    # plt.imshow(mask_boolean[:, :, 35])
+    # plt.show()
+    # ...
+    # Create mask through means such as ML
+    # ...
 
-rtstruct.save(r'I:\Data\convert-test\new-rt-struct.dcm')
-print()
+    # Add another ROI, this time setting the color, description, and name
+    rt_struct.add_roi(
+        mask=mask_boolean,
+        color=[255, 0, 255],
+        name="Bladder_predict"
+    )
+
+    rt_struct.save(join(dicom_output_dir, patient_id + "_predict.dcm"))
 
