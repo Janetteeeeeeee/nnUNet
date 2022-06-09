@@ -7,7 +7,7 @@ from skimage import measure
 import dicom2nifti
 import nibabel as nib
 import pydicom
-from batchgenerators.utilities.file_and_folder_operations import join, isdir
+from batchgenerators.utilities.file_and_folder_operations import join, isdir, maybe_mkdir_p
 from nnunet.paths import nnUNet_raw_data
 from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
