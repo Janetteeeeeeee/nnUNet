@@ -15,6 +15,7 @@
 
 import argparse
 import torch
+import time
 
 from nnunet.inference.predict import predict_from_folder
 from nnunet.paths import default_plans_identifier, network_training_output_dir, default_cascade_trainer, default_trainer
@@ -222,4 +223,8 @@ def main():
 
 
 if __name__ == "__main__":
+    start = time.time()
+    print(start)
     main()
+    end = time.time()
+    print("time consumed: ", end - start)

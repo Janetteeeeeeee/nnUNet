@@ -9,9 +9,7 @@ import nibabel as nib
 import pydicom
 from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles, maybe_mkdir_p
 from nnunet.paths import nnUNet_raw_data
-from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
-
 
 
 def read_ct_rs(ct_rs_folder):
@@ -23,7 +21,7 @@ def read_ct_rs(ct_rs_folder):
         ct_file_index = 0
         if temp_file.startswith('RS') or temp_file.startswith('RTSTRUCT'):
             rs_file = os.path.join(ct_rs_folder, temp_file)
-        elif temp_file.startswith('CT') or temp_file.endswith('.dcm'):
+        elif temp_file.startswith('CT'):
             ct_files.append(os.path.join(ct_rs_folder, temp_file))
             ct_file_index += 1
     if rs_file == "":
@@ -59,18 +57,23 @@ def extract_contour(ct_files, rs_file):
 
     roi_list = []
     roi_name_index_dict = {}
-    for index, roi in enumerate(rs_dicom_info[0x3006, 0x0020]):
-        roi_name = roi[0x3006, 0x0026].value.lower()
-        if roi_name.find('rectum') >= 0:
-            roi_name_index_dict['rectum'] = index
+    contour_search = ['rectum1', 'rectum']
+    for contour_s in contour_search:
+        for index, roi in enumerate(rs_dicom_info[0x3006, 0x0020]):
+            roi_name = roi[0x3006, 0x0026].value.lower()
+            if roi_name.find(contour_s) >= 0:
+                roi_name_index_dict[contour_s] = index
+                break
+    for contour_s in contour_search:
+        if contour_s in roi_name_index_dict:
+            roi_list.append(roi_name_index_dict[contour_s])
+            break
         # elif roi_name.find('bladder_j') >= 0:
         #     roi_name_index_dict['bladder_j'] = index
         # elif roi_name.find('bladder-j') >= 0:
         #     roi_name_index_dict['bladder-j'] = index
         # elif roi_name.find('bladder') >= 0:
         #     roi_name_index_dict['bladder'] = index
-    if 'rectum' in roi_name_index_dict:
-        roi_list.append(roi_name_index_dict['rectum'])
     # elif 'bladder_j' in roi_name_index_dict:
     #     roi_list.append(roi_name_index_dict['bladder_j'])
     # elif 'bladder-j' in roi_name_index_dict:
@@ -173,15 +176,17 @@ def convert_file(mode, dicom_root_folder, task_id, task_name):
     elif mode == 'test':
         test_image = join(task_root_folder, 'imagesTs')
         test_label = join(task_root_folder, 'labelsTs')
-        if isdir(test_image):
-            shutil.rmtree(test_image)
-        if isdir(test_label):
-            shutil.rmtree(test_label)
+        # if isdir(test_image):
+        #     shutil.rmtree(test_image)
+        # if isdir(test_label):
+        #     shutil.rmtree(test_label)
         maybe_mkdir_p(test_image)
         maybe_mkdir_p(test_label)
         patient_dir_list = os.listdir(dicom_root_folder)
         image_nii_folders = []
         for patient_dir in patient_dir_list:
+            # if int(patient_dir) < 518:
+            #     continue
             dicom_folder = os.path.join(dicom_root_folder, patient_dir)
             dicom_files, contour_file = read_ct_rs(dicom_folder)
 
@@ -203,7 +208,8 @@ def convert_file(mode, dicom_root_folder, task_id, task_name):
             niftis = subfiles(join(test_image, nii_folder), suffix=".nii.gz")
             nii_gz_file = niftis[0]
             shutil.move(nii_gz_file, join(test_image, task_name + '_' + nii_folder + '_0000' + label_filename_suffix))
-            # shutil.rmtree(join(test_image, nii_folder))
+            shutil.rmtree(join(test_image, nii_folder))
+
 
 if __name__ == "__main__":
     mode = 'test'

@@ -104,7 +104,7 @@ def main():
     parser.add_argument('-f', '--folders', nargs='+', help="list of folders to merge. All folders must contain npz "
                                                            "files", required=True)
     parser.add_argument('-o', '--output_folder', help="where to save the results", required=True, type=str)
-    parser.add_argument('-t', '--threads', help="number of threads used to saving niftis", required=False, default=2,
+    parser.add_argument('-t', '--threads', help="number of threads used to saving niftis", required=False, default=6,
                         type=int)
     parser.add_argument('-pp', '--postprocessing_file', help="path to the file where the postprocessing configuration "
                                                              "is stored. If this is not provided then no postprocessing "

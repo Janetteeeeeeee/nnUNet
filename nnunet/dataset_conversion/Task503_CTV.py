@@ -7,24 +7,10 @@ from skimage import measure
 import dicom2nifti
 import nibabel as nib
 import pydicom
-from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles
+from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles, maybe_mkdir_p
 from nnunet.paths import nnUNet_raw_data
 from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
-
-
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i + 1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i + 1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 
 def read_ct_rs(ct_rs_folder):
@@ -72,20 +58,21 @@ def extract_contour(ct_files, rs_file):
 
     roi_list = []
     roi_name_index_dict = {}
-    for index, roi in enumerate(rs_dicom_info[0x3006, 0x0020]):
-        roi_name = roi[0x3006, 0x0026].value.lower()
-        if roi_name.find('ctv') >= 0:
-            roi_name_index_dict['ctv'] = index
-        elif roi_name.find('gtv') >= 0:
-            roi_name_index_dict['gtv'] = index
+    contour_search = ['ctv', 'gtv']
+    for contour_s in contour_search:
+        for index, roi in enumerate(rs_dicom_info[0x3006, 0x0020]):
+            roi_name = roi[0x3006, 0x0026].value.lower()
+            if roi_name.find(contour_s) >= 0:
+                roi_name_index_dict[contour_s] = index
+                break
+    for contour_s in contour_search:
+        if contour_s in roi_name_index_dict:
+            roi_list.append(roi_name_index_dict[contour_s])
+            break
         # elif roi_name.find('bladder-j') >= 0:
         #     roi_name_index_dict['bladder-j'] = index
         # elif roi_name.find('bladder') >= 0:
         #     roi_name_index_dict['bladder'] = index
-    if 'ctv' in roi_name_index_dict:
-        roi_list.append(roi_name_index_dict['ctv'])
-    elif 'gtv' in roi_name_index_dict:
-        roi_list.append(roi_name_index_dict['gtv'])
     # elif 'bladder-j' in roi_name_index_dict:
     #     roi_list.append(roi_name_index_dict['bladder-j'])
     # elif 'bladder' in roi_name_index_dict:
@@ -142,7 +129,7 @@ def extract_contour(ct_files, rs_file):
 
 
 def convert_file(mode, dicom_root_folder, task_id, task_name):
-    task_root_folder = nnUNet_raw_data + '\\Task' + task_id + '_' + task_name
+    task_root_folder = nnUNet_raw_data + '/Task' + task_id + '_' + task_name
     label_filename_suffix = '.nii.gz'
     maybe_mkdir_p(task_root_folder)
     if mode == 'train':
@@ -186,15 +173,17 @@ def convert_file(mode, dicom_root_folder, task_id, task_name):
     elif mode == 'test':
         test_image = join(task_root_folder, 'imagesTs')
         test_label = join(task_root_folder, 'labelsTs')
-        if isdir(test_image):
-            shutil.rmtree(test_image)
-        if isdir(test_label):
-            shutil.rmtree(test_label)
+        # if isdir(test_image):
+        #     shutil.rmtree(test_image)
+        # if isdir(test_label):
+        #     shutil.rmtree(test_label)
         maybe_mkdir_p(test_image)
         maybe_mkdir_p(test_label)
         patient_dir_list = os.listdir(dicom_root_folder)
         image_nii_folders = []
         for patient_dir in patient_dir_list:
+            # if int(patient_dir) < 518:
+            #     continue
             dicom_folder = os.path.join(dicom_root_folder, patient_dir)
             dicom_files, contour_file = read_ct_rs(dicom_folder)
 
@@ -216,12 +205,12 @@ def convert_file(mode, dicom_root_folder, task_id, task_name):
             niftis = subfiles(join(test_image, nii_folder), suffix=".nii.gz")
             nii_gz_file = niftis[0]
             shutil.move(nii_gz_file, join(test_image, task_name + '_' + nii_folder + '_0000' + label_filename_suffix))
-            # shutil.rmtree(join(test_image, nii_folder))
+            shutil.rmtree(join(test_image, nii_folder))
 
 if __name__ == "__main__":
-    mode = 'train'
-    task_id = '503'
-    task_name = 'ctv'
+    mode = 'test'
+    task_id = '504'
+    task_name = 'ctvfull'
     dicom_root_folder = r'E:\CTV\AutoSeg_CTV_data_164cases\train'
     convert_file(mode, dicom_root_folder, task_id, task_name)
 
