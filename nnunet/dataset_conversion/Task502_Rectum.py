@@ -7,24 +7,10 @@ from skimage import measure
 import dicom2nifti
 import nibabel as nib
 import pydicom
-from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles
+from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles, maybe_mkdir_p
 from nnunet.paths import nnUNet_raw_data
 from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
-
-
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i + 1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i + 1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 
 def read_ct_rs(ct_rs_folder):
@@ -74,20 +60,20 @@ def extract_contour(ct_files, rs_file):
     roi_name_index_dict = {}
     for index, roi in enumerate(rs_dicom_info[0x3006, 0x0020]):
         roi_name = roi[0x3006, 0x0026].value.lower()
-        if roi_name.find('rectum') >= 0:
+        if roi_name.find('rectum1') >= 0:
+            roi_name_index_dict['rectum1'] = index
+        elif roi_name.find('rectum-predict') >= 0:
+            roi_name_index_dict['rectum-predict'] = index
+        elif roi_name.find('rectum') >= 0:
             roi_name_index_dict['rectum'] = index
-        # elif roi_name.find('bladder_j') >= 0:
-        #     roi_name_index_dict['bladder_j'] = index
-        # elif roi_name.find('bladder-j') >= 0:
-        #     roi_name_index_dict['bladder-j'] = index
         # elif roi_name.find('bladder') >= 0:
         #     roi_name_index_dict['bladder'] = index
-    if 'rectum' in roi_name_index_dict:
+    if 'rectum1' in roi_name_index_dict:
+        roi_list.append(roi_name_index_dict['rectum1'])
+    elif 'rectum-predict' in roi_name_index_dict:
+        roi_list.append(roi_name_index_dict['rectum-predict'])
+    elif 'rectum' in roi_name_index_dict:
         roi_list.append(roi_name_index_dict['rectum'])
-    # elif 'bladder_j' in roi_name_index_dict:
-    #     roi_list.append(roi_name_index_dict['bladder_j'])
-    # elif 'bladder-j' in roi_name_index_dict:
-    #     roi_list.append(roi_name_index_dict['bladder-j'])
     # elif 'bladder' in roi_name_index_dict:
     #     roi_list.append(roi_name_index_dict['bladder'])
 
@@ -178,7 +164,7 @@ def convert_file(mode, dicom_root_folder, task_id, task_name):
             niftis = subfiles(join(train_image, nii_folder), suffix=".nii.gz")
             nii_gz_file = niftis[0]
             shutil.move(nii_gz_file, join(train_image, task_name + '_' + nii_folder + '_0000' + label_filename_suffix))
-            # shutil.rmtree(join(train_image, nii_folder))
+            shutil.rmtree(join(train_image, nii_folder))
 
         # create json
         generate_dataset_json(join(task_root_folder, 'dataset.json'), train_image, None, ('CT',),
@@ -219,9 +205,9 @@ def convert_file(mode, dicom_root_folder, task_id, task_name):
             # shutil.rmtree(join(test_image, nii_folder))
 
 if __name__ == "__main__":
-    mode = 'test'
-    task_id = '502'
-    task_name = 'rectum'
+    mode = 'train'
+    task_id = '505'
+    task_name = 'rectumfull'
     dicom_root_folder = r'E:\AutoSeg_Rectum_data\Test'
     convert_file(mode, dicom_root_folder, task_id, task_name)
 

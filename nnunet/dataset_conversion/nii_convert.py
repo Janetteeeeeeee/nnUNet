@@ -7,23 +7,11 @@ from skimage import measure
 import dicom2nifti
 import nibabel as nib
 import pydicom
-from batchgenerators.utilities.file_and_folder_operations import join, isdir
+from batchgenerators.utilities.file_and_folder_operations import join, isdir, maybe_mkdir_p
 from nnunet.paths import nnUNet_raw_data
 from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
 
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i+1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i+1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 def read_ct_rs(ct_rs_folder):
     ct_rs_files = os.listdir(ct_rs_folder)
@@ -65,7 +53,7 @@ def extract_contour(ct_files, rs_file):
     roi_list = []
     for index, roi in enumerate(rs_dicom_info[0x3006, 0x0020]):
         roi_name = roi[0x3006, 0x0026].value
-        if roi_name.lower().find('s-bladder') >= 0:
+        if roi_name.lower().find('Bladder') >= 0:
             roi_list.append(index)
             break
 
@@ -126,14 +114,14 @@ if __name__ == "__main__":
     task_root_folder = nnUNet_raw_data + '\\Task' + task_id + '_' + task_name
     if isdir(task_root_folder):
         shutil.rmtree(task_root_folder)
-    train_image = join(task_root_folder, 'imagesTr')
-    train_label = join(task_root_folder, 'labelsTr')
-    label_filename_suffix = '.nii.gz'
-    maybe_mkdir_p(task_root_folder)
-    maybe_mkdir_p(train_image)
-    maybe_mkdir_p(train_label)
-    patient_dir_list = os.listdir(dicom_root_folder)
-    image_nii_folders = []
+        train_image = join(task_root_folder, 'imagesTr')
+        train_label = join(task_root_folder, 'labelsTr')
+        label_filename_suffix = '.nii.gz'
+        maybe_mkdir_p(task_root_folder)
+        maybe_mkdir_p(train_image)
+        maybe_mkdir_p(train_label)
+        patient_dir_list = os.listdir(dicom_root_folder)
+        image_nii_folders = []
     for patient_dir in patient_dir_list:
         dicom_folder = os.path.join(dicom_root_folder, patient_dir)
         dicom_files, contour_file = read_ct_rs(dicom_folder)
@@ -149,7 +137,7 @@ if __name__ == "__main__":
             dicom2nifti.convert_directory(dicom_folder, join(train_image, patient_dir), compression=True)
             image_nii_folders.append(patient_dir)
         except:
-            print('No contour s-bladder', patient_dir)
+            print('No contour in Bladder', patient_dir)
 
     for nii_folder in image_nii_folders:
         nii_gz_file = join(train_image, nii_folder, '2.nii.gz')
@@ -157,5 +145,5 @@ if __name__ == "__main__":
         shutil.rmtree(join(train_image, nii_folder))
 
     # create json
-    generate_dataset_json(join(task_root_folder, 'dataset.json'), train_image, None, ('CT',),
-                          {0: 'background', 1: 'bladder'}, dataset_name=task_name)
+    #generate_dataset_json(join(task_root_folder, 'dataset.json'), train_image, None, ('CT',),
+    #                    {0: 'background', 1: 'bladder'}, dataset_name=task_name)

@@ -7,24 +7,10 @@ from skimage import measure
 import dicom2nifti
 import nibabel as nib
 import pydicom
-from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles
+from batchgenerators.utilities.file_and_folder_operations import join, isdir, subfiles, maybe_mkdir_p
 from nnunet.paths import nnUNet_raw_data
 from collections import OrderedDict
 from nnunet.dataset_conversion.utils import generate_dataset_json
-
-
-def maybe_mkdir_p(directory):
-    directory = os.path.abspath(directory)
-    splits = directory.split("\\")[1:]
-    base = directory.split('\\')[0]
-    for i in range(0, len(splits)):
-        if not os.path.isdir(join(base, join("\\", *splits[:i + 1]))):
-            try:
-                os.mkdir(join(base, join("\\", *splits[:i + 1])))
-            except FileExistsError:
-                # this can sometimes happen when two jobs try to create the same directory at the same time,
-                # especially on network drives.
-                print("WARNING: Folder %s already existed and does not need to be created" % directory)
 
 
 def read_ct_rs(ct_rs_folder):
@@ -217,12 +203,12 @@ def convert_file(mode, dicom_root_folder, task_id, task_name):
             niftis = subfiles(join(test_image, nii_folder), suffix=".nii.gz")
             nii_gz_file = niftis[0]
             shutil.move(nii_gz_file, join(test_image, task_name + '_' + nii_folder + '_0000' + label_filename_suffix))
-            # shutil.rmtree(join(test_image, nii_folder))
+            shutil.rmtree(join(test_image, nii_folder))
 
 if __name__ == "__main__":
-    mode = 'train'
+    mode = 'test'
     task_id = '504'
     task_name = 'ctvfull'
-    dicom_root_folder = r'E:\CTV\AutoSeg_CTV_data_606cases\train'
+    dicom_root_folder = r'E:\CTV\test dicom\output1'
     convert_file(mode, dicom_root_folder, task_id, task_name)
 
